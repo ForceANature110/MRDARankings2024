@@ -1,5 +1,6 @@
 import math
 
+
 class RollerDerbyElo:
 
     def __init__(self, initial_ratings=None):
@@ -12,8 +13,23 @@ class RollerDerbyElo:
     def set_rating(self, team_name, rating):
         self.ratings[team_name] = rating
 
-    def expected_score(self, ra, rb):
-        return 1 / (1 + 10 ** ((rb - ra) / 200))
+    #def expected_score(self, ra, rb):
+    #    return 1 / (1 + 10 ** ((rb - ra) / 200))
+
+    def expected_score(self, team_a, team_b):
+        """Calculate expected score between two teams."""
+        ra = self.ratings[team_a]
+        rb = self.ratings[team_b]
+        return 1 / (1 + 10 ** ((rb - ra) / 400))
+
+    def get_expected_score(self, team_a, team_b):
+        """Print the expected score for a match between two teams."""
+        scorea = self.expected_score(team_a, team_b)
+        scoreb = self.expected_score(team_b, team_a)
+        if isinstance(scorea, str):  # Error message if teams not found
+            print(scorea)
+        else:
+            print(f"Expected score for {team_a} {scorea:.3f} -  {team_b}: {scoreb:.3f}")
 
     def update_ratings(self, games):
 
@@ -38,14 +54,14 @@ class RollerDerbyElo:
             ra = self.ratings[team_a]
             rb = self.ratings[team_b]
 
-            ea = self.expected_score(ra, rb)
-            eb = self.expected_score(rb, ra)
+            ea = self.expected_score(team_a, team_b)
+            eb = self.expected_score(team_b, team_a)
 
             score_diff = int(score_a) - int(score_b)
             sa = 1 / (1 + math.exp(-0.015 * score_diff))  # Sigmoid function for proportional scores
             sb = 1 - sa  # Complementary probability for team B
 
-            k = 96
+            k = 64
 
             adjustments[team_a] += k * (sa - ea)
             adjustments[team_b] += k * (sb - eb)
@@ -53,7 +69,6 @@ class RollerDerbyElo:
             # Use full team names for output
             full_name_a = team_names.get(team_a, "Unknown Team")
             full_name_b = team_names.get(team_b, "Unknown Team")
-
 
             print(f"Game: {full_name_a} vs {full_name_b}")
             print(f"Ratings - {team_a}: {self.ratings[team_a]}, {team_b}: {self.ratings[team_b]}")
@@ -76,11 +91,8 @@ class RollerDerbyElo:
             if adjustment != 0:
                 initial_position = initial_positions[team]
                 final_position = final_positions[team]
-                print(f"{team} Adjustment: {adjustment:.2f}, Initial Position: {initial_position}, New Position: {final_position}")
-
-
-
-
+                print(
+                    f"{team} Adjustment: {adjustment:.2f}, Initial Position: {initial_position}, New Position: {final_position}")
 
     def get_rating(self, team_name):
         return self.ratings.get(team_name, "Team not found")
@@ -88,7 +100,7 @@ class RollerDerbyElo:
 
 #Usage
 initial_ratings_e = {'BOR': 800, 'CTB': 636, 'DHR': 515.5, 'KEM': 689,
-                     'MRD': 861, 'MRD(B)': 600, 'PAN': 619.4,  'TIL': 758.6,
+                     'MRD': 861, 'MRD(B)': 600, 'PAN': 619.4, 'TIL': 758.6,
                      'TNF': 806, 'TNF(B)': 550, 'SWS': 647.6,
                      }
 initial_ratings_w = {
@@ -128,11 +140,11 @@ games_e = [
     [
         ('TIL', 193, 'KEM', 106)
     ],
-#    [
-#        ('DHR', 82, 'BOR', 256),
-#        ('PAN', 111, 'BOR', 193),
-#        ('DHR', 103, 'PAN', 158)
-#    ],
+    #    [
+    #        ('DHR', 82, 'BOR', 256),
+    #        ('PAN', 111, 'BOR', 193),
+    #        ('DHR', 103, 'PAN', 158)
+    #    ],
     [
         ('TIL', 91, 'MRD', 219)
     ],
@@ -174,7 +186,7 @@ games_w = [
     ],
     [
         ('CHC', 148, 'TOM', 173),
-    #   ('RCR', 100, 'SLG', 0),
+        #   ('RCR', 100, 'SLG', 0),
         ('TRD', 66, 'PIT', 533),
     ],
     [
@@ -312,7 +324,6 @@ team_names = {
     'SWS': 'South Wales Silures',
 }
 
-
 elo_system_w = RollerDerbyElo(initial_ratings_w)
 elo_system_e = RollerDerbyElo(initial_ratings_e)
 
@@ -323,7 +334,6 @@ for gameday_w in games_w:
 for gameday_e in games_e:
     print("\n")
     elo_system_e.update_ratings(gameday_e)
-
 
 # Retrieve and print ratings
 ratings_e = {team: elo_system_e.get_rating(team) for team in
@@ -357,3 +367,13 @@ for code, rating in sorted_ratings_e:
     full_name = team_names.get(code, "Unknown Team")
     print(f"{position}\t\t{full_name}\t{rating:.2f}")
     position += 1
+
+print(elo_system_w.get_expected_score('RCR', 'CBB'))
+print(elo_system_w.get_expected_score('CWB', 'PIT'))
+print(elo_system_w.get_expected_score('MCM', 'CBB'))
+print(elo_system_w.get_expected_score('PIT', 'PHH'))
+print(elo_system_w.get_expected_score('MCM', 'RCR'))
+print(elo_system_w.get_expected_score('CWB', 'PHH'))
+print(elo_system_w.get_expected_score('CBB', 'PHH'))
+print(elo_system_w.get_expected_score('RCR', 'PIT'))
+print(elo_system_w.get_expected_score('CWB', 'MCM'))
