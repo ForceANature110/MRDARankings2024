@@ -6,7 +6,7 @@ class RollerDerbyElo:
     def __init__(self, initial_ratings=None):
         self.ratings = initial_ratings if initial_ratings else {}
 
-    def add_team(self, team_name, initial_rating=1000):
+    def add_team(self, team_name, initial_rating=700):
         if team_name not in self.ratings:
             self.ratings[team_name] = initial_rating
 
@@ -58,7 +58,7 @@ class RollerDerbyElo:
             eb = self.expected_score(team_b, team_a)
 
             score_diff = int(score_a) - int(score_b)
-            sa = 1 / (1 + math.exp(-0.015 * score_diff))  # Sigmoid function for proportional scores
+            sa = 1 / (1 + math.exp(-0.008 * score_diff))  # Sigmoid function for proportional scores
             sb = 1 - sa  # Complementary probability for team B
 
             k = 64
@@ -72,7 +72,7 @@ class RollerDerbyElo:
 
             print(f"Game: {full_name_a} vs {full_name_b}")
             print(f"Ratings - {team_a}: {self.ratings[team_a]}, {team_b}: {self.ratings[team_b]}")
-            print(f"Expected Score: {ea:.2f} - {eb:.2f}, Actual Score: {sa:.2f} - {sb:.2f}")
+            print(f"Expected Score: {ea:.3f} - {eb:.3f}, Actual Score: {sa:.3f} - {sb:.3f}")
             print(f"Initial Positions - {team_a}: {initial_positions[team_a]}, {team_b}: {initial_positions[team_b]}")
             print(f"Adjustment: {team_a}: {k * (sa - ea):.2f}, {team_b}: {k * (sb - eb):.2f}")
 
@@ -105,7 +105,7 @@ initial_ratings_e = {'BOR': 800, 'CTB': 636, 'DHR': 515.5, 'KEM': 689,
                      }
 initial_ratings_w = {
     'AUA': 749.3, 'CWB': 781.7, 'CAB': 722.2,
-    'CBB': 817.3, 'CHC': 719.1, 'CLM': 573.4,
+    'CBB': 817.3, 'CBBB': 600, 'CABB': 360, 'CHC': 719.1, 'CLM': 573.4,
     'DGC': 902.5, 'DEM': 600.6, 'DIS': 792.0,
     'FLC': 663.4, 'LCC': 750.6, 'MCM': 973.6,
     'PHH': 766.7, 'PIT': 787.3, 'PITB': 480.0,
@@ -140,11 +140,11 @@ games_e = [
     [
         ('TIL', 193, 'KEM', 106)
     ],
-    #    [
-    #        ('DHR', 82, 'BOR', 256),
-    #        ('PAN', 111, 'BOR', 193),
-    #        ('DHR', 103, 'PAN', 158)
-    #    ],
+    [
+        ('DHR', 82, 'BOR', 256),
+        ('PAN', 111, 'BOR', 193),
+        ('DHR', 103, 'PAN', 158)
+    ],
     [
         ('TIL', 91, 'MRD', 219)
     ],
@@ -163,17 +163,21 @@ games_e = [
         ('TNF', 291, 'TIL', 246)
     ],
 
-    #[
-    #    ('CTB', 300, 'TNF(B)', 246),
-    #],
+    [
+        ('CTB', 300, 'TNF(B)', 246),
+    ],
 
-    #[
-    #    ('BOR', 521, 'KEM', 66),
-    #    ('MRD', 264, 'TIL', 116),
-    #],
-    #[
-    #    ('BOR', 100, 'TNF', 136),
-    #]
+    [
+        ('BOR', 521, 'KEM', 66),
+        ('MRD', 264, 'TIL', 116),
+    ],
+    [
+        ('BOR', 213, 'TNF', 253),
+        ('MRD', 308, 'KEM', 31),
+    ],
+    [
+        ('MRD', 40, 'TNF', 246),
+    ],
 ]
 
 games_w = [
@@ -287,13 +291,66 @@ games_w = [
     [
         ('FLC', 53, 'TOM', 234)
     ],
+    [
+        #APR 6 2024
+        ('PITB', 175, 'CLM', 161)
+    ],
+    [
+        #BOBH APR 13 2024
+        ('PHH', 130, 'CAB', 156),
+        ('AUA', 107, 'TOM', 138),
+        ('CAB', 162, 'AUA', 106),
+        ('PHH', 166, 'TOM', 173),
+        ('CAB', 133, 'TOM', 118),
+        ('PHH', 195, 'AUA', 104),
+    ],
+    [
+        #APR 20 2024
+        ('FLC', 227, 'CABB', 124)
+    ],
+    [
+        #SALEM SLAM APR 27 2024
+        ('LCC', 334, 'CHC', 101),
+        ('PSO', 133, 'SDA', 176),
+        ('PSO', 241, 'CHC', 105),
+        ('LCC', 135, 'SDA', 110),
+        ('PSO', 111, 'LCC', 187),
+        ('SDA', 312, 'CHC', 95),
+    ],
+    [
+        #MAY 4 2024
+        ('FLC', 183, 'CLM', 150)
+    ],
+    [
+        ('PSO', 113, 'CHC', 257),
+        ('TOM', 183, 'CHC', 187),
+        ('TOM', 265, 'PSO', 161),
+    ],
+
+    [
+        ('RCR', 204, 'CBB', 87),
+        ('CWB', 210, 'PIT', 82),
+        ('MCM', 399, 'CBB', 3),
+        ('PIT', 116, 'PHH', 101),
+        ('MCM', 237, 'RCR', 45),
+        ('CWB', 273, 'PHH', 64),
+        ('CBB', 131, 'PHH', 114),
+        ('RCR', 160, 'PIT', 87),
+        ('CWB', 85, 'MCM', 242),
+    ],
+    [
+        # MAY 4 2024
+        ('CLM', 159, 'CBBB', 152)
+    ],
 ]
 
 team_names = {
     'AUA': 'Austin Anarchy',
     'CWB': 'Carolina Wreckingballs',
     'CAB': 'Casco Bay Roller Derby',
+    'CABB': 'Casco Bay Roller Derby (B)',
     'CBB': 'Chicago Bruise Brothers',
+    'CBBB': 'Chicago Bruise Brothers (B)',
     'CHC': 'Chinook City Roller Derby',
     'CLM': 'Cleveland Guardians Roller Derby',
     'DGC': 'Denver Ground Control',
@@ -368,12 +425,6 @@ for code, rating in sorted_ratings_e:
     print(f"{position}\t\t{full_name}\t{rating:.2f}")
     position += 1
 
-print(elo_system_w.get_expected_score('RCR', 'CBB'))
-print(elo_system_w.get_expected_score('CWB', 'PIT'))
-print(elo_system_w.get_expected_score('MCM', 'CBB'))
-print(elo_system_w.get_expected_score('PIT', 'PHH'))
-print(elo_system_w.get_expected_score('MCM', 'RCR'))
-print(elo_system_w.get_expected_score('CWB', 'PHH'))
-print(elo_system_w.get_expected_score('CBB', 'PHH'))
-print(elo_system_w.get_expected_score('RCR', 'PIT'))
-print(elo_system_w.get_expected_score('CWB', 'MCM'))
+#Expected scores can be generated by using the below function
+#for example --- Puget Sound vs Toronto Men's
+print(elo_system_w.get_expected_score('PSO', 'TOM'))
