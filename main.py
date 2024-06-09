@@ -66,19 +66,19 @@ class RollerDerbyElo:
             normalized_score_A = score_a / total_score
             normalized_score_B = score_b / total_score
 
-            # Step 2: Weight the Normalized Scores
+            #Weight the Normalized Scores
             weighted_normalized_score_A = 2 * normalized_score_A
             weighted_normalized_score_B = 2 * normalized_score_B
 
-            # Step 3: Calculate the Bonus Scores
+            #Calculate the Bonus Scores
             bonus_score_A = 0.1 * math.sqrt(score_a)
             bonus_score_B = 0.1 * math.sqrt(score_b)
 
-            # Step 4: Combine Weighted Normalized Scores with Bonus
+            #Combine Weighted Normalized Scores with Bonus
             score_with_bonus_A = weighted_normalized_score_A + bonus_score_A
             score_with_bonus_B = weighted_normalized_score_B + bonus_score_B
 
-            # Step 5: Normalize the Combined Scores
+            #Normalize the Combined Scores
             total_score_with_bonus = score_with_bonus_A + score_with_bonus_B
 
             sa = score_with_bonus_A / total_score_with_bonus
