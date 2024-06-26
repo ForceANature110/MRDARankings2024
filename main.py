@@ -4,11 +4,37 @@ import math
 class RollerDerbyElo:
 
     def __init__(self, initial_ratings=None):
+        self.reasons = {}
         self.ratings = initial_ratings if initial_ratings else {}
 
     def add_team(self, team_name, initial_rating=700):
         if team_name not in self.ratings:
             self.ratings[team_name] = initial_rating
+
+    def add_explain_data(self, team_a, ra, score_a, ea, sa, adja, team_b, rb, score_b, eb, sb, adjb):
+
+        full_name_a = team_names.get(team_a, "Unknown Team")
+        full_name_b = team_names.get(team_b, "Unknown Team")
+
+        if team_a not in self.reasons:
+            self.reasons[team_a] = f"Explination for {full_name_a} \n\n"
+
+        self.reasons[team_a] += (f"Played {full_name_b}, the score was {score_a} - {score_b}\n"
+                                 f"Before the game, {full_name_a}'s Rating was {ra:.1f} and {full_name_b}'s was {rb:.1f}\n"
+                                 f"The Expected score was {ea:.3f} - {eb:.3f}\n"
+                                 f"The Adjusted score was {sa:.3f} - {sb:.3f}\n"
+                                 f"For {full_name_a}, that is a difference of {sa - ea:.3f}\n"
+                                 f"and as such, their rating was adjusted by {adja:.2f}, leaving them on {ra + adja:.1f} \n\n")
+
+        if team_b not in self.reasons:
+            self.reasons[team_b] = f"Explination for {full_name_b} \n\n"
+
+        self.reasons[team_b] += (f"Played {full_name_a}, the score was {score_b} - {score_a}\n"
+                                 f"Before the game, {full_name_b}'s Rating was {rb:.1f} and {full_name_a}'s was {ra:.1f}\n"
+                                 f"The Expected score was {eb:.3f} - {ea:.3f}\n"
+                                 f"The Adjusted score was {sb:.3f} - {sa:.3f}\n"
+                                 f"For {full_name_b}, that is a difference of {sb - eb:.3f}\n"
+                                 f"and as such, their rating was adjusted by {adjb:.2f}, leaving them on {rb + adjb:.1f} \n\n")
 
     def set_rating(self, team_name, rating):
         self.ratings[team_name] = rating
@@ -20,7 +46,8 @@ class RollerDerbyElo:
         """Calculate expected score between two teams."""
         ra = self.ratings[team_a]
         rb = self.ratings[team_b]
-        return 1 / (1 + 10 ** ((rb - ra) / 400))
+        #return 1 / (1 + 10 ** ((rb - ra) / 400))
+        return 1 / (1 + math.pow(10, ((rb - ra) / 400)))
 
     def get_expected_score(self, team_a, team_b):
         """Print the expected score for a match between two teams."""
@@ -57,45 +84,30 @@ class RollerDerbyElo:
             ea = self.expected_score(team_a, team_b)
             eb = self.expected_score(team_b, team_a)
 
-            #score_diff = int(score_a) - int(score_b)
-            #sa = 1 / (1 + math.exp(-0.008 * score_diff))  # Sigmoid function for proportional scores
-            #sa = int(score_a) / int(score_a + score_b)
-            #sb = 1 - sa  # Complementary probability for team B
-
-            total_score = score_a + score_b
-            normalized_score_A = score_a / total_score
-            normalized_score_B = score_b / total_score
-
-            #Weight the Normalized Scores
-            weighted_normalized_score_A = 2 * normalized_score_A
-            weighted_normalized_score_B = 2 * normalized_score_B
-
-            #Calculate the Bonus Scores
-            bonus_score_A = 0.1 * math.sqrt(score_a)
-            bonus_score_B = 0.1 * math.sqrt(score_b)
-
-            #Combine Weighted Normalized Scores with Bonus
-            score_with_bonus_A = weighted_normalized_score_A + bonus_score_A
-            score_with_bonus_B = weighted_normalized_score_B + bonus_score_B
-
-            #Normalize the Combined Scores
-            total_score_with_bonus = score_with_bonus_A + score_with_bonus_B
-
-            sa = score_with_bonus_A / total_score_with_bonus
-            sb = 1 - sa  # Complementary probability for team B
-
-            k = 128
-
-            adjustments[team_a] += k * (sa - ea)
-            adjustments[team_b] += k * (sb - eb)
-
             # Use full team names for output
             full_name_a = team_names.get(team_a, "Unknown Team")
             full_name_b = team_names.get(team_b, "Unknown Team")
 
             print(f"Game: {full_name_a} vs {full_name_b}")
             print(f"Ratings - {team_a}: {self.ratings[team_a]:.2f}, {team_b}: {self.ratings[team_b]:.2f}")
-            print(f"Expected Score: {ea:.3f} - {eb:.3f}, Actual Score: {sa:.3f} - {sb:.3f}")
+            print(f"Expected Score: {ea:.3f} - {eb:.3f}")
+
+            sa = self.sigmoid_actual_score(score_a, score_b)
+            #sa = self.normalised_actual_score(score_a, score_b)
+            #sa = self.normalised_actual_score_with_bonus(score_a, score_b)
+
+            sb = 1 - sa  # Complementary probability for team B
+
+            k = 128
+
+            adjust_a = k * (sa - ea)
+            adjust_b = k * (sb - eb)
+            adjustments[team_a] += adjust_a
+            adjustments[team_b] += adjust_b
+
+            self.add_explain_data(team_a, ra, score_a, ea, sa, adjust_a, team_b, rb, score_b, eb, sb, adjust_b)
+
+            print(f"Actual Points: {score_a:.0f} - {score_b:.0f}, Actual Score: {sa:.3f} - {sb:.3f}")
             print(f"Initial Positions - {team_a}: {initial_positions[team_a]}, {team_b}: {initial_positions[team_b]}")
             print(f"Adjustment: {team_a}: {k * (sa - ea):.2f}, {team_b}: {k * (sb - eb):.2f}")
 
@@ -116,16 +128,68 @@ class RollerDerbyElo:
                 final_position = final_positions[team]
                 print(
                     f"{team} Adjustment: {adjustment:.2f}, Initial Position: {initial_position}, New Position: {final_position}")
+                self.update_rank_in_reasons(team, final_position)
 
     def get_rating(self, team_name):
         return self.ratings.get(team_name, "Team not found")
 
+    def sigmoid_actual_score(self, score_a, score_b):
+        score_diff = int(score_a) - int(score_b)
+        print(f"Score Difference: {score_diff:.0f}")
+        return 1 / (1 + math.exp(-0.008 * score_diff))  # Sigmoid function for proportional scores
 
+    def normalised_actual_score(self, score_a, score_b):
+        total_score = score_a + score_b
+        print(f"Actual Points: {score_a:.0f} - {score_b:.0f}, total score: {total_score:.0f}")
+        return score_a / total_score
+
+    def normalised_actual_score_with_bonus(self, score_a, score_b):
+        total_score = score_a + score_b
+        normalized_score_A = score_a / total_score
+        normalized_score_B = score_b / total_score
+
+        # Weight the Normalized Scores
+        weighted_normalized_score_A = 2 * normalized_score_A
+        weighted_normalized_score_B = 2 * normalized_score_B
+
+        # Calculate the Bonus Scores
+        bonus_score_A = 0.01 * math.sqrt(score_b)
+        bonus_score_B = 0.01 * math.sqrt(score_a)
+
+        # Combine Weighted Normalized Scores with Bonus
+        score_with_bonus_A = weighted_normalized_score_A + bonus_score_A
+        score_with_bonus_B = weighted_normalized_score_B + bonus_score_B
+
+        # Normalize the Combined Scores
+        total_score_with_bonus = score_with_bonus_A + score_with_bonus_B
+
+        print(
+            f"Normalised Score: {normalized_score_A:.3f} - {normalized_score_B:.3f}, Weighted Normalised Score: {weighted_normalized_score_A:.3f} - {weighted_normalized_score_B:.3f}")
+        print(
+            f"Bonus Score: {bonus_score_A:.3f} - {bonus_score_B:.3f}, Score With Bonus: {score_with_bonus_A:.3f} - {score_with_bonus_B:.3f}")
+        print(f"Total Score With bonus: {total_score_with_bonus:.3f}")
+
+        return score_with_bonus_A / total_score_with_bonus
+
+    def explain_for(self, team):
+        return self.reasons.get(team)
+
+    def update_rank_in_reasons(self, team, final_position):
+        self.reasons[team] += f"Their final position after this gameday is {final_position}\n\n"
+
+
+
+#calibration has put BOR on 743.5 by ensuring there is no adjustment using their scores in the first gameday
+#However past rankings started them on 800 this is probably how we should enter new teams
+#todo discuss with rankings committee which initial rating to use
 #Usage
 initial_ratings_e = {'BOR': 800, 'CTB': 636, 'DHR': 515.5, 'KEM': 689,
                      'MRD': 861, 'MRD(B)': 600, 'PAN': 619.4, 'TIL': 758.6,
                      'TNF': 806, 'TNF(B)': 550, 'SWS': 647.6,
                      }
+
+
+
 initial_ratings_w = {
     'AUA': 749.3, 'CWB': 781.7, 'CAB': 722.2,
     'CBB': 817.3, 'CBBB': 600, 'CABB': 360, 'CHC': 719.1, 'CLM': 573.4,
@@ -197,6 +261,10 @@ games_e = [
     [
         ('BOR', 213, 'TNF', 253),
         ('MRD', 308, 'KEM', 31),
+    ],
+    [
+        ('BOR', 271, 'MRD', 101),
+        ('TIL', 338, 'KEM', 117),
     ],
 ]
 
@@ -375,8 +443,10 @@ games_w = [
         ('RCR', 233, 'CAB', 122),
         #('SLG', 100, 'DIS', 0),
         ('DGC', 287, 'SDA', 88),
-
-
+    ],
+    [
+        # Jun 15 2024
+        ('CLM', 79, 'FLC', 233)
     ],
 ]
 
@@ -465,4 +535,5 @@ for code, rating in sorted_ratings_e:
 
 #Expected scores can be generated by using the below function
 #for example --- Puget Sound vs Toronto Men's
-print(elo_system_w.get_expected_score('DGC', 'SDA'))
+print(elo_system_w.get_expected_score('SLG', 'MCM'))
+print(elo_system_e.explain_for('TNF'))
